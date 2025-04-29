@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "tfg"
+version = "0.1.0"
+description = "Aquí mantengo los códigos para realizar el trabajo de fin de grado"
+authors = ["Álvaro Méndez Rodríguez de Tembleque <alvaromendezrt@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.12"
+numpy = "^2.1.2"
+seaborn = "^0.13.2"
+plotly = "^6.0.0"
+ipykernel = "^6.29.5"
+astropy = "^7.0.1"
+nbformat = "^5.10.4"
+ydata-profiling = "^4.12.2"
+scikit-learn = "^1.6.1"
+dcor = "^0.6"
+pylatex = "^1.4.2"
+pysr = "^1.5.5"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.29.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

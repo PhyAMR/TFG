@@ -1,0 +1,309 @@
+\documentclass[11pt, a4paper]{article} %tamaño mínimo de letra 11pto.
+
+\usepackage{graphicx} 
+\usepackage{subcaption}
+\usepackage[spanish]{babel} %Español 
+\usepackage[utf8]{inputenc} %Para poder poner tildes
+\usepackage{vmargin} %Para modificar los márgenes
+\setmargins{2.5cm}{1.5cm}{16.5cm}{23.42cm}{10pt}{1cm}{0pt}{2cm}
+%margen izquierdo, superior, anchura del texto, altura del texto, altura de los encabezados, espacio entre el texto y los encabezados, altura del pie de página, espacio entre el texto y el pie de página
+\usepackage{hyperref}
+
+\usepackage{csquotes}% Recommended
+\usepackage[minnames=1,maxnames=2,maxbibnames = 3, style=authoryear, bibstyle = authoryear, backend=bibtex, giveninits=true, block = none, isbn = false, url = false, doi = false, eprint = false]{biblatex}
+\usepackage{float}
+\addbibresource{refs.bib} %Imports bibliography file
+
+\begin{document}
+%%%%%%Portada%%%%%%%
+\begin{titlepage}
+\centering
+{ \bfseries \Large UNIVERSIDAD COMPLUTENSE DE MADRID}
+\vspace{0.5cm}
+
+{\bfseries  \Large FACULTAD DE CIENCIAS FÍSICAS} 
+\vspace{1cm}
+
+{\large DEPARTAMENTO DE FÍSICA DE LA TIERRA Y ASTROFÍSICA}
+\vspace{0.8cm}
+
+%%%%Logo Complutense%%%%%
+{\includegraphics[width=0.35\textwidth]{logo_UCM.png}} %Para ajustar la portada a una sola página se puede reducir el tamaño del logo
+\vspace{0.8cm}
+
+{\bfseries \Large TRABAJO DE FIN DE GRADO}
+\vspace{2cm}
+
+{\Large Código de TFG:  [C\'odigo TFG] } \vspace{5mm}
+
+{\Large [Relaciones estructurales de galaxias remotas a partir de los catálogos CANDELS]}\vspace{5mm}
+
+{\Large [Structural relations of remote galaxies from the CANDELS catalogues]}\vspace{5mm}
+
+{\Large Supervisor/es: [Nombre del/os supervisores]}\vspace{20mm} 
+
+{\bfseries \LARGE Jesús Gallego Maestro}\vspace{5mm} 
+
+{\large Grado en Física}\vspace{5mm} 
+
+{\large Curso acad\'emico 20[24-25]}\vspace{5mm} 
+
+{\large Convocatoria XXXX}\vspace{5mm} 
+
+\end{titlepage}
+\newpage
+
+%{\bfseries \large [Título extendido del TFG (si procede)] }\vspace{10mm} 
+
+{\bfseries \large Resumen:} \vspace{5mm}
+
+La busqueda de patrones en los datos de experimentos cientificos es una de las principales
+fuentes de informacion en el campo de la astrofísica. El universo a grandes escalas está 
+compuesto por procesos muy complejos, por lo que la
+observación de estos patrones nos permite entender mejor el funcionamiento de estos procesos.
+
+Durante muchos años, se ha observado el firmamento con nuevas y mejores tecnologías con el 
+fin de tener una mayor cantidad de datos de los que obtener información. El catálogo CANDELS
+contiene una gran cantidad de datos sobre galaxias,  a varios redshifts diferentes, que 
+contiene una gran cantidad de datos sobre propiedades físicas acercas de estas. 
+
+El objetivo es usar este catálogo para analizar los datos con un algoritmo de regresión simbólica 
+para obtener relaciones ya conocidas, y ver que otras relaciones se pueden obtener a partir de 
+estos datos.
+
+[Rsumen de lo encontrado]
+[Conclusiones]
+[Prespectiva]
+\vspace{10mm}
+
+{\bfseries \large Abstract: } \vspace{5mm} 
+
+The search of patterns in scientific experiments data is one of the main sources of 
+information in astrophysics. The vast universe is characterized of complex, that makes the
+observation of these patterns can help us to understand better the working of these processes.
+
+For many years, the cosmic dust has been observed with new and better technologies to obtain a 
+higher amount of data. The CANDELS catalogue contains a large amount of data about galaxies, 
+at different redshifts, that contains a large amount of data about physical properties of these objects.
+
+The goal is to use this catalogue to analyze the data with a symbolic regression algorithm to obtain 
+known relations, and see that other relations can be obtained from these data.
+
+[Abstract of what has been found]
+[Conclusions]
+[Outlook]
+
+\vspace{1cm}
+
+%%Comentar estas notas para que no salgan en la memoria
+%{\Large\textbf{Nota: el título extendido (si procede), el resumen y el abstract deben estar en una misma página y su extensión no debe superar una página. Tamaño mínimo 11pto.}}
+%\vspace{1cm}
+
+%{\Large\textbf{Extensión máxima 20 páginas sin contar portada ni resumen (sí se incluye índice, introducción, conclusiones y bibliografía}}
+\newpage
+
+%%Inicio:
+\tableofcontents
+
+
+\section{Introducción}
+
+El objetivo principal de la física es tener la capcaidad de entender, y por consecuente, poder explicar los procesos que ocurren en 
+nuestro universo. Desde hace ya varios siglos la observación ha sido una de las herramientas más útiles para poder tener indicios del comportamiento de estos procesos,
+como la relación $r\propto T^3$ descubierta por Kepler, o la predicción de nuevas partículas basandose en las propiedades y simetrias de un 
+determinado conjutno de partículas. \\
+
+Es por ello que las relaciones que podemos obtener a partir de los datos experimentales propician el descubrimiento de nueva física, especialmente en la astrofísica.
+Las relaciones entre los diferentes parámetros de las galaxias, como el radio, el tamaño, la masa, etc, nos permiten clasificarlas según como estas se relacionan entre si. 
+Este tipo de clasificaciones, meramente observacionales, son muy habituales en la astrofísica extragaláctica entre ellos destacan algunos puramente observacionales como puede ser el diagrama de Hubble, 
+y otros más analíticos como puede ser el índice de Sersix. Ambos tienen un único objetivo, clasificar las galaxias con el fin de poder estudiar y comparar los sistemas con otros que sufren procesos similares debido a que pertenecen al mismo grupo.\\
+
+Este trabajo se centra en estudiar un grupo conrecto de galaxias, aquellas galaxias que pertenecen al \textit{Cosmic Noon} o 
+amanezer cósmico (Ver figura \ref{fig:madau}). En este periodo del universo (con valores de redshift entre $1.5$ y $2.5$) se formaron la mayoría de galaxias que 
+observamos en el universo actual, es por eso que su estudio puede revelar una gran cantidad de información no solo acerca de los orígenes
+de estas estructuras, si no también de su evolución hasta llegar a las galaxias del universo cercano. \\
+
+%\begin{figure}[H]
+%    \centering
+%    \includegraphics[scale=0.5]{Madau-plot-of-the-star-formation-rate-7.png}
+%    \caption{Diagrama de Madau en donde se aprecia el máximo de formación de galaxias. \autocite{Madau}}
+%    \label{fig:madau}
+%\end{figure}
+
+Dada la morfología de este grupo de galaxias, la cual es muy diferente de las actuales, es de esperar que sus relaciones estructurales 
+no tengan porque ser las mismas, o que en caso de que si sean la misma no se relacionen de la misma forma. 
+\section{La exploración CANDELS}
+
+La exploración (\textit{Cosmic Assembly Near-IR Deep Extragalactic Legacy Survey (CANDELS)})\autocite{Grogin,Koekemoer}
+
+
+
+Los objetivos de la exploración pueden verse en la tabla 2 en \autocite{Grogin}
+
+\subsection{El catálogo EGS}
+
+La exploración CANDELS brinda una gran fuente de información de multitud de fuentes con las que trabajar, sin embargo, este
+trabajo se va a centrar el estudio en el catálogo \textit{Extended Growth Strip (EGS)} el cual se centra en 
+
+\autocite{Stefanon,Kodra_2023}
+\section{Regresión simbólica}
+
+La regresión simbólica (SR) es un tipo de ajuste a los datos en el que no se parte de un 
+modelo concreto, como puede ser la regresión lineal o ajustar a una exponencial, sino que 
+se parte de una serie de operadores o funciones, como puede ser el uso de funciones trigonométricas 
+o usar funciones con exponentes, que busca el mejor modelo como combinación de esos operadores.  
+
+
+Los algoritmos de SR despuntaron en la decada de los 80 como respuesta a la difícil tarea de encontrar ecuaciones que 
+ajustaran a unos datos experimentales que crecian tanto en volumen como en dimensión. Es por eso que muchos métodos diferentes
+se han presentado desde entonces con diferentes puntos de vista. La idea detrás de estos algoritmos es facilitar la búsqueda
+de expresiones analíticas con las que luego poder hacer otros cálculos (ecuaciones de continuidad, condiciones de contorno, etc)
+y derivar conclusiones de los posibles mecanismo causantes del comportamiento de los datos. 
+
+
+En este caso concreto se ha usado la librería \href{https://github.com/MilesCranmer/PySR}{PySR} la cual
+ha sido elegida por su impletenciación en Python, por los ''benchmarks''  o resultados que 
+se describen en \autocite{cranmerInterpretableMachineLearning2023}. Además, al tratarse de una libreria reciente y de codigo abierto,
+PySR se encuentra en constante crecimiento haciendo que la comunidad científia en su conjunto pueda apoyar su desarrollo y mejora.
+
+
+A parte, aunque no se entrará en gran detalle esta libreria tiene
+una gran cantidad de funcionalidades que la hacen muy polivalente para una gran cantidad de usos, además de una integración con varias
+librerias que permiten un futuro tratamiento de las expresiones obtenidas. A continuación se explica el mecanismo de funcionamiento
+de este algortimo en concreto.
+\subsection{Fundamento}
+
+PySR se basa en un algoritmo de SR general al que sus autores le han realizado algunas modificaciones con el fin de facilitar
+su versatilidad en cuanto a la aplicación a diversos campos. 
+
+A continuación se describe el algoritmo de convergencia, en lineas generales, para la obtención de expresiones matemáticas;
+junto con las modificaciones que presenta PySR. El algoritmo
+consiste en el siguiente conjunto de pasos:
+\begin{itemize}
+    \item Bucle interno
+    
+    El bucle interno consiste en los siguientes pasos:
+    \begin{enumerate}
+        \item Supongamos una expresión matemática con un conjunto $N$ de combinaciones de operadores que queremos evaluar y vamos
+        a comparar cada conjunto de operadores entre si, esto se denomina \textbf{torneo}. Cada torneo consiste en enfrentar
+        $n_{s}$ subconjuntos de operadores (tipicamente $n_{s}=2$) y enfrentamos a cada operador $O_{i}$ entre si.
+        \item Asignamos una probabilidad $p$ al operador que mejor ajuste tras compararlos todos. Si $p$ es muy bajo, quitamos 
+        ese operador del subconjunto y repetimos este paso.
+        \item Nos quedamos con aquel operador con mayor probabilidad y lo metemos en otro de los subconjuntos de operadores $O$ 
+        para repetir el proceso hasta que converga del cual obtendremos el conjunto de operadores que define el mejor ajuste.
+        
+    \end{enumerate}
+    \item Bucle externo
+    
+    El bucle externo consiste en realizar el proceso para diferentes conjuntos $N$ (\textbf{islas}) y así tener la posibilidad de migrar
+    de una isla a otra y aumentar las combinaciones posibles. 
+\end{itemize}
+
+
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{Inner_loop.png}
+        \caption{Bucle interno del algoritmo }
+        \label{fig:sub11}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{Islas.png}
+        \caption{Bucle externo del algoritmo}
+        \label{fig:sub22}
+    \end{subfigure}
+    \caption{Diagrama de los bucles utilizados en PYSR. \autocite{cranmerInterpretableMachineLearning2023}}
+    \label{fig:imagenes_lado_a_ladoo}
+\end{figure}
+\section{Análisis de relaciones estructurales}
+
+Para proceder al análisis de los datos lo primero es centrarse en posbles relaciones ya conocidas de forma que podamos reducir el número de posibles relaciones, como ya se ha comentado 
+en la sección (EGS), no todas las relaciones son interesante, ya sea por el tipo de dato que tenemos o porque no haya una motivación física detrás con la que se pueda argumentar la existencia de dicha relación
+\footnote{Aunque lo idela fuera no tener ningún sesgo, dado la dimensionalidad del conjunto de datos lo óptimo es filtrar por relaciones ya conocidas y hacer variaciones de las mismas para explorar otras nuevas}.
+
+Una forma sencilla, visual y efectiva de iniciar la busqueda de relaciones es mediante el uso de \textit{pairplots}. Este tipo de gráficos nos permiten tener de un primer vistazo una imagen del comportamiento de los datos. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.35\textwidth]{custom_pairplots/SFR/Fontana_SFR_pairplot.png}
+    \caption{Ejemplo de Pairplot. En este caso se muestra un Pairplot para los datos de Fontana}
+    \label{fig:pair_ex}
+\end{figure}
+
+Como se puede ver en la figura \ref{fig:pair_ex} con este tipo de gráficos podemos obtener una gran cantidad de información para entenderla naturaleza de los datos:
+
+\begin{itemize}
+    \item \textbf{Triángulo inferior}: En el tríangulo inferior podemos observar un diagrama KDE \textit{Kernel Density Estimator} el cual nos 
+    permite ver la distribución de los datos, es especialmente útil para poder observar distintos grupos de datos y su distribución.
+    \item \textbf{Diagonal}: En la diagonal es posible observar la distribución de los datos. Como es de esperar los datos no tienen porque seguir una distribución normal o gaussiana, esto se debe al \textit{Sesgo del superviviente}, dado que estamos estudiando
+     una región muy concreta del espacio, no solo por el campo de la exploración si no también por centrarnos en el \textit{Cosmic Noon}, es muy probable que no tengamos galaxias muy diferentes entre si
+    \item \textbf{Triángulo superior}: El triangulo superior consiste un simple gráfico de puntos donde podemos ver mejor cual es el comportamiento de los datos.
+    
+\end{itemize}
+
+Haciendo uso de estos gráficos podemos obtener de forma visual información sobre el comportamiento de los datos, no solo en cuanto a la dependencia de una variable con respecto a otra; si no 
+también como se distribuyen o si froman agrupaciones. 
+
+Dadas las dimensiones de estos g´raficos y el número límitado de páginas de este trabajo a continuación se muestra
+
+\subsection{Previo y limpieza de los datos}
+
+Una vez acotadas las posibles relaciones que esperamos encontrar es necesario profundizar en la naturaleza de los datos con 
+el fin de detectar posibles errores en la medida o valores atípicos que, aunque válidos, se alejen del comportamiento de la mayoría de las medidas. 
+Este descarte de los valores atípicos se raliza con el fin de asegurar que los datos puedan ajustar bien a un modelo, en este caso una SR, y poder así analizar 
+correctamente las predicciones del modelo. 
+
+La mayor fuente de valores atípicos son medidas de mala calidad, que generalmente se indicaban con el número $-99.0$. Estos valores han de ser eliminados por la simple razón de carecer de sentido físico, en ninguno de los parámetros estudiados tiene sentido que puedan tomar ese valor (ej, masas, edades, magnitudes, ...). 
+
+Otra fuente de valores atípicos viene de la mano de los núcleos activos. Aunque en los datos se señaliza que galaxias podrían contener un AGN (Active Galactic Nuclei) el número de estos es mucho menor que el tamaño de la muestra, por lo que estudiarlos
+de la misma forma siendo tan poco representativos y teniendo un comportamiento tan diferente al de una galaxía que no lo tienen (o cuya imagen no tiene la resolución para identificarlo) carece de sentido si el objetivo es ajustar a un modelo. 
+
+\subsection{Análisis de relaciones estructurales 2D}
+
+El análisis de la relaciones entre 2 parámetros es un caso, que aunque simple, muy poderoso. Estas relaciones han sido muy estudiadas para diferentes parámetros 
+como pueden ser la relación Masa-Luminosidad o los diagramas H-R que relacionan propiedades observacionales entre si, todo ello con el fin de encontrar relaciones, que aplicadas a muestras no estudiadas, nos permitan obtener información. 
+
+En el caso más simple de todos, una relación lineal, podemos ver que tan buena es esa relación mediante el \textit{ Coeficiente de Pearson} $R^2$; pero 
+estas relaciones no siempre tienen que ser lineales, es posible que sean cuadráticas, logarítmicas, exponenciales, etc. En esos caso, cuando la relación no es puramente lineal, el $R^2$ puede ser bajo
+pero la relación sigue estando ahí, es por eso que para estudiar estas relaciones sin sesgar por aquellas relaciones que sean lineales se ha hecho uso de lo que se denomina \textit{Distancia de Correlación} \autocite{dcor}.
+
+La distancia por correlación es una medida de la dependencia entre dos variables aleatorias, en la que se mide la distancia entre los valores de las variables (distancia entre puntos en un diagrama de dsipersión), por lo que no se ve tan afectado pot la 
+linealidad de los datos, es decir, captura la dependencia entre las variables sin importar si esta es lineal o no.
+
+\subsubsection{Relación Masa-Tasa de formación estelar}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
+    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{URL}{aquí}}
+    \label{fig:pair_ex}
+\end{figure}
+\subsubsection{Relación Masa-Luminosidad}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
+    \caption{Relación entre la masa y la luminosidad. Pueden verse más gráficos \href{URL}{aquí}}
+    \label{fig:pair_ex}
+\end{figure}
+\subsubsection{Relación }
+\subsection{Análisis de relaciones estructurales 3D}
+
+En el caso de las relaciones entre 3 parámetros, el análisis es más complicado, ya que no solo se tiene que tener en cuenta la relación entre los tres parámetros, si no también la forma en la que estos se distribuyen; especialmente para el caso en el que buscamos un \textit{Plano fundamental}. 
+Es por eso que es necesario cuantificar cuando aparece un plano al representar los 3 parámetros, para ello se ha empleado el \textit{Explained Variance Ratio (EVR)}. El EVR es una medida de la varianza explicada por cada componente principal en un análisis de componentes principales (PCA). 
+En este caso, el EVR se utiliza para evaluar la cantidad de varianza que se explica por el plano en comparación con la varianza total de los datos. Un EVR alto indica que el plano captura una gran parte de la variabilidad de los datos, lo que sugiere que los datos están bien representados por el plano.
+
+
+\subsubsection{Relación Masa-Redshift-Tasa de formación estelar}
+\section{Conclusiones}
+
+%\bibliographystyle{plainnat} % We choose the "plain" reference style
+%\bibliography{refs} % Entries are in the refs.bib file
+
+\printbibliography
+\appendix
+
+%\section{Otras curiosidades destacables}
+
+\end{document}
