@@ -246,7 +246,19 @@ Como se puede ver en la figura \ref{fig:pair_ex} con este tipo de gráficos pode
 Haciendo uso de estos gráficos podemos obtener de forma visual información sobre el comportamiento de los datos, no solo en cuanto a la dependencia de una variable con respecto a otra; si no 
 también como se distribuyen o si froman agrupaciones. 
 
-Dadas las dimensiones de estos g´raficos y el número límitado de páginas de este trabajo a continuación se muestra
+Dadas las dimensiones de estos gráficos y el número límitado de páginas de este trabajo a continuación se muestran las conclusiones que se ha obtenido con ellos\footnote{Los gráficos pueden verse en este \href{https://github.com/PhyAMR/TFG/tree/main/custom_pairplots}{enlace}}:
+
+
+\begin{itemize}
+    \item Los diferentes modelos de ajuste a los datos (denotados con tau, invtau, lin, cons, etc) 
+    suelen obtener datos similares, en los pairplots se ve que (en muchos casos) forman una recta cuando se gráfican entre sí. Esto nos permite poder comparar diferentes modelos entre si y cambiar el modelo sencillamente usando la recta de ajuste.
+    \item El punto anterior solo es aplicable cuando nos comparamos modelos de un mismo autor, ya que aunque siguen formando una recta la dispersión es mucho mayor y no es un procedimiento preciso en este caso.
+    \item Al igual ocurre si la medida tiene en cuenta la emisión nebular o no, en este caso la dispersión es mucho mayor y no se puede comparar entre si.
+    \item A continuación una lista de posibles relaciones que quedan excluidas una vez analizados los gráficos:
+    \begin{enumerate}
+        \item 
+    \end{enumerate}
+\end{itemize}
 
 \subsection{Previo y limpieza de los datos}
 
@@ -272,12 +284,26 @@ pero la relación sigue estando ahí, es por eso que para estudiar estas relacio
 La distancia por correlación es una medida de la dependencia entre dos variables aleatorias, en la que se mide la distancia entre los valores de las variables (distancia entre puntos en un diagrama de dsipersión), por lo que no se ve tan afectado pot la 
 linealidad de los datos, es decir, captura la dependencia entre las variables sin importar si esta es lineal o no.
 
+Para estudiar esta relación se han usado los gráficos de dispersión de la figura \ref{fig:MSFR} en donde se han representado los datos en diferentes formas funcionales típicas en astrofísica.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
+    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
+    \label{fig:MSFR}
+\end{figure}
+
+Para obtener las siguientes relaciones finales se ha filtrado el gráfico que presenta el menor \textit{Root Mean Square Error (RMSE)}. El RMSE es una medida de la diferencia entre los valores predichos por un modelo y los valores observados. 
+\begin{equation}
+    RMSE = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2}
+\end{equation}
+donde $y_i$ son los valores observados, $\hat{y}_i$ son los valores predichos por el modelo y $n$ es el número total de observaciones. Un RMSE bajo indica que el modelo se ajusta bien a los datos, mientras que un RMSE alto sugiere que el modelo no se ajusta bien, por lo que nos quedamos con el modelo que tiene el menor RMSE.
 \subsubsection{Relación Masa-Tasa de formación estelar}
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
-    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{URL}{aquí}}
-    \label{fig:pair_ex}
+    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
+    \label{fig:MSFR}
 \end{figure}
 \subsubsection{Relación Masa-Luminosidad}
 
@@ -285,8 +311,10 @@ linealidad de los datos, es decir, captura la dependencia entre las variables si
     \centering
     \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
     \caption{Relación entre la masa y la luminosidad. Pueden verse más gráficos \href{URL}{aquí}}
-    \label{fig:pair_ex}
+    \label{fig:LM}
 \end{figure}
+\subsubsection{Relación Masa-Magnitud}
+\subsubsection{Relación Tasa de formación estelar-Magnitud}
 \subsubsection{Relación }
 \subsection{Análisis de relaciones estructurales 3D}
 
@@ -294,6 +322,12 @@ En el caso de las relaciones entre 3 parámetros, el análisis es más complicad
 Es por eso que es necesario cuantificar cuando aparece un plano al representar los 3 parámetros, para ello se ha empleado el \textit{Explained Variance Ratio (EVR)}. El EVR es una medida de la varianza explicada por cada componente principal en un análisis de componentes principales (PCA). 
 En este caso, el EVR se utiliza para evaluar la cantidad de varianza que se explica por el plano en comparación con la varianza total de los datos. Un EVR alto indica que el plano captura una gran parte de la variabilidad de los datos, lo que sugiere que los datos están bien representados por el plano.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
+    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
+    \label{fig:MSFR}
+\end{figure}
 
 \subsubsection{Relación Masa-Redshift-Tasa de formación estelar}
 \section{Conclusiones}
@@ -302,7 +336,7 @@ En este caso, el EVR se utiliza para evaluar la cantidad de varianza que se expl
 %\bibliography{refs} % Entries are in the refs.bib file
 
 \printbibliography
-\appendix
+%\appendix
 
 %\section{Otras curiosidades destacables}
 

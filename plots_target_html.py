@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 import plotly.io as pio
 from sklearn.model_selection import train_test_split
 from pysr import PySRRegressor
-from sklearn.metrics import r2_score
+from sklearn.metrics import root_mean_squared_error
 
 class PlotCollector:
     def __init__(self):
@@ -28,6 +28,7 @@ class PlotCollector:
         self.plot_count += 1
 
 def create_combined_html(plot_collector, filename="all_plots.html"):
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     if len(plot_collector.figures) != 0:
         html_str = '''<!DOCTYPE html>
         <html>
@@ -73,14 +74,16 @@ def create_combined_html(plot_collector, filename="all_plots.html"):
 
 
 
-def symbolic_regression(df, input_cols, target_col, threshold=0.8):
+def symbolic_regression(df, input_cols, target_col, threshold=0.2):
     X = df[input_cols].values
     y = df[target_col].values
 
+    # Split the data
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.3, random_state=12
     )
 
+    # Ajustar el modelo de regresión simbólica con datos originales
     model = PySRRegressor(
         binary_operators=["+", "-", "*", "/", "^"],
         unary_operators=["exp", "log", "sqrt"],
@@ -90,14 +93,47 @@ def symbolic_regression(df, input_cols, target_col, threshold=0.8):
     )
     model.fit(X_train, y_train)
 
+    # Predecir en el conjunto de prueba
     y_pred = model.predict(X_test)
-    score = r2_score(y_test, y_pred)
 
-    if score >= threshold:
-        best_expr = model.sympy()
-        return best_expr, score
+    # Normalizar las características de entrada y la variable objetivo para evaluación
+    scaler_X = StandardScaler()
+    X_test_scaled = scaler_X.fit_transform(X_test)
+
+    scaler_y = StandardScaler()
+    y_test_scaled = scaler_y.fit_transform(y_test.reshape(-1, 1)).ravel()
+    y_pred_scaled = scaler_y.transform(y_pred.reshape(-1, 1)).ravel()
+
+    if len(input_cols) == 2:
+        # Combinar entradas y predicciones normalizadas
+        data_combined = np.hstack((X_test_scaled, y_pred_scaled.reshape(-1, 1)))
+
+        # Apply PCA with 3 components
+        pca = PCA(n_components=3)
+        pca.fit(data_combined)
+        explained_variance = pca.explained_variance_ratio_
+
+        # Extract the explained variance of the third component
+        third_component_variance = explained_variance[2]
+
+        print(f"Explained variance of the third component: {third_component_variance:.4f}")
+
+        # Evaluate if the model meets the threshold
+        if third_component_variance <= threshold:
+            best_expr = model.sympy()
+            return best_expr, third_component_variance
+        else:
+            return None, third_component_variance
     else:
-        return None, score
+        # Calculate RMSE
+        rmse = root_mean_squared_error(y_test_scaled, y_pred_scaled)
+        print(f"RMSE: {rmse:.4f}")
+
+        # Evaluate if the model meets the threshold
+        
+        best_expr = model.sympy()
+        return best_expr, rmse
+        
 
 def remove_empty_directories(start_dir):
     """
@@ -227,29 +263,29 @@ def save_completed_plot(plot_id):
         f.write(f"{plot_id}\n")
 
 
-def plot_condition(name, unit_groups = {
-        "Time_Plots": [
-            "dex_yr",  
-            "Gyr"
-        ],
-        "Magnitude_Plots": [
-            "mag",
-            "erg_s_Hz"       
-        ],
-        "StarFormation_Plots": [
-            "solMass_yr"  
-        ],
-        "Metallicity_Plots": [
-            "solMet"     
-        ],
-        "Luminosity_Plots": [
-            "erg_s_Hz",  
-            "dex_solLum"  
-        ],
-        "Mass_Plots": [
-            "dex_solMass"  
-        ]
-    }):
+def plot_condition(name, unit_groups={
+    "Time_Plots": [
+        "dex_yr",  
+        "Gyr"
+    ],
+    "Magnitude_Plots": [
+        "mag",
+        "erg_s_Hz"       
+    ],
+    "StarFormation_Plots": [
+        "solMass_yr"  
+    ],
+    "Metallicity_Plots": [
+        "solMet"     
+    ],
+    "Luminosity_Plots": [
+        "erg_s_Hz",  
+        "dex_solLum"  
+    ],
+    "Mass_Plots": [
+        "dex_solMass"  
+    ]
+}):
     """
     Decides whether a plot should be processed or not based on its filename.
         name (str): Filename of the plot
@@ -257,21 +293,16 @@ def plot_condition(name, unit_groups = {
     Returns:
         True if the plot should be processed, False otherwise
     """
-
     for group_name, patterns in unit_groups.items():
-        # Count how many patterns match components in the split filename
-        same_matches = 0
-        for pattern in patterns:
-            same_matches += name.count(pattern)
+        pattern_regex = '|'.join(re.escape(p) for p in patterns)
+        same_matches = len(re.findall(pattern_regex, name))
         
-        #print(f"Checking patterns in group '{group_name}'")
-        #print(f"Number of same matches: {same_matches}")
-        
-        if same_matches >= 2:  # At least 2 distinct patterns must match
+        if same_matches >= 2:  # At least 2 patterns must match
             logger.info(f"Plot {name} matches at least 2 patterns in group '{group_name}'")
             return False
         
     return True
+
 
 def generate_centered_grid(data_x, data_y, n_points=50, std_scale=1.5):
     """Generate grid centered around data mean with std-scaled range"""
@@ -327,8 +358,8 @@ def plot2d(df, x, y, dire, n, heatmap_column, dataset_dir,plot_collector):
             
         log_x_best, log_y_best = best_params
         safe_n = sanitize_filename(n)
-        if safe_n in completed_plots:
-            logger.info(f"Skipping plot {n}: already completed.")
+        if safe_n in completed_plots or plot_condition(sanitize_filename(x+y)):
+            logger.info(f"Skipping plot {n}: already completed or not useful.")
             return
 
         # Create Plotly figure
@@ -348,7 +379,7 @@ def plot2d(df, x, y, dire, n, heatmap_column, dataset_dir,plot_collector):
                     y=0.95,
                     xref='paper',
                     yref='paper',
-                    text=f"{best_expr}<br>RMSE: {best_chi2:.2f}",
+                    text=f"{best_expr}<br>RMSE: {root_mean_squared_error(np.asarray(best_data['input'].values), np.asarray(best_data['target'].values)):.2f}<br>DCOR:{distance_correlation(np.asarray(best_data['input'].values), np.asarray(best_data['target'].values)):.2f}",
                     showarrow=False,
                     bgcolor='white',
                     bordercolor='black',
@@ -419,7 +450,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
     try:
         logger.info(f"Creating interactive 3D plot {n} for {x}, {y}, {z}")
         safe_n = sanitize_filename(n)
-        if safe_n in completed_plots:
+        if safe_n in completed_plots or plot_condition(sanitize_filename(x+y+z)):
             logger.info(f"Skipping plot {n}: already completed.")
             return
         
@@ -476,7 +507,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
                     dict(
                         x=0.05,
                         y=0.95,
-                        text=f"{best_expr}<br>RMSE: {best_chi2:.2f}",
+                        text=f"{best_expr}<br>EVR: {best_chi2:.2f}",
                         showarrow=False,
                         font=dict(size=12),
                         bordercolor='black',
@@ -648,10 +679,13 @@ def process_dataframe(df: pd.DataFrame,
                             plot_name = f"{dataset_name}_{safe_x}_vs_{safe_y}"
                             if plot_condition(plot_name):
                                 plot2d(dataset_df, i, target, plot2d_dir, plot_name, heatmap_column,dataset_dir,plot_collector)
+                                plotted_2d.add(combo_key)
+                                plotted_2d.add((target, i))
                             else:
                                 logger.info(f"Skipping 2D plot {plot_name} - columns not useful")
-                            plotted_2d.add(combo_key)
-                            plotted_2d.add((target, i))  # Add reverse to prevent mirror plots
+                                plotted_2d.add(combo_key)
+                                plotted_2d.add((target, i))  # Add reverse to prevent mirror plots
+                                continue
                         else:
                             logger.info(f"Skipping 2D plot {plot_name} - already plotted")
 
@@ -665,16 +699,17 @@ def process_dataframe(df: pd.DataFrame,
                             plot_name = f"{dataset_name}_{'_'.join(safe_combo)}"
                             if plot_condition(plot_name):
                                 plot3d(dataset_df, *combo,target, plot3d_dir, plot_name, heatmap_column, dataset_dir,plot_collector)
+                                plotted_3d.add(combo_key)
                             else:
                                 logger.info(f"Skipping 3D plot {plot_name} - columns not useful")
-                            plotted_3d.add(combo_key)
+                                plotted_3d.add(combo_key)
                         else:
                             logger.info(f"Skipping 3D plot {plot_name} - already plotted")
 
             except Exception as e:
                 logger.error(f"Error processing {dataset_name}: {str(e)}", exc_info=True)
                 continue
-            create_combined_html(plot_collector, f"{dataset_dir}/{sanitize_filename(target)}_{dataset_name}_plots.html")
+            create_combined_html(plot_collector, f"{dataset_name}/{sanitize_filename(target)}_{dataset_name}_plots.html")
         #logger.info(f"______________Starting pairplots_______________")
         #for dataset_name, dataset_df in datasets:
         #    try:
@@ -1061,7 +1096,6 @@ if __name__ == "__main__":
     df_numeric.dropna(subset=m_cols, how='any', inplace=True)
     df_numeric.dropna(subset=age_cols, how='any', inplace=True)
  
-    regexdic = {'Salvato': r'_11a|^z_best|^Salvato_z_peak', 'BooMeLee': r'_14a|^z_best', 'Barro': r'_2a|^z_best','Finkelstein': r'_4b|^z_best|^Finkelstein_z_peak','Pforr': r'_10c|^z_best|^Pforr_z_peak','Wikilind': r'_12a|^z_best|^Wiklind_z_peak','Wuyts': r'_13a|^z_best|^Wuyts_z_peak', 'Fontana': r'_6a|^z_best|^Fontana_z_peak'}
     df_drop = df_numeric.filter(regex=r'_low|_high|_weight|^chi2|spec|_grism|RA|DEC|ID|^zphot|Flag|^q_|^s_|AGN|^EBV')
     df_numeric.drop(df_drop.columns, axis=1, inplace=True)
    
@@ -1078,6 +1112,9 @@ if __name__ == "__main__":
         
     targets_df = df_numeric.filter(regex=r'^M_\d+|^SFR|^L|(mag)|met|z_best')
     print(targets)
+    # 
+    regexdic = {'Salvato': r'_11a|^z_best|^Salvato_z_peak',  'Barro': r'_2a|^z_best','Finkelstein': r'_4b|^z_best|^Finkelstein_z_peak','Pforr': r'_10c|^z_best|^Pforr_z_peak','Wikilind': r'_12a|^z_best|^Wiklind_z_peak','Wuyts': r'_13a|^z_best|^Wuyts_z_peak' }
+    regexdic2= {'BooMeLee': r'_14a|^z_best', 'Fontana': r'_6a|^z_best|^Fontana_z_peak'}
     print(len(targets))
     for t in targets:
         tar = sanitize_filename(t)
