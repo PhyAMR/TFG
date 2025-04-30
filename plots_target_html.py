@@ -358,8 +358,8 @@ def plot2d(df, x, y, dire, n, heatmap_column, dataset_dir,plot_collector):
             
         log_x_best, log_y_best = best_params
         safe_n = sanitize_filename(n)
-        if safe_n in completed_plots or plot_condition(sanitize_filename(x+y)):
-            logger.info(f"Skipping plot {n}: already completed or not useful.")
+        if safe_n in completed_plots:
+            logger.info(f"Skipping plot {n}: already completed ")
             return
 
         # Create Plotly figure
@@ -379,7 +379,7 @@ def plot2d(df, x, y, dire, n, heatmap_column, dataset_dir,plot_collector):
                     y=0.95,
                     xref='paper',
                     yref='paper',
-                    text=f"{best_expr}<br>RMSE: {root_mean_squared_error(np.asarray(best_data['input'].values), np.asarray(best_data['target'].values)):.2f}<br>DCOR:{distance_correlation(np.asarray(best_data['input'].values), np.asarray(best_data['target'].values)):.2f}",
+                    text=f"{best_expr}<br>RMSE: {root_mean_squared_error(np.asarray(best_data['input'].values,dtype=float), np.asarray(best_data['target'].values,dtype=float)):.2f}<br>DCOR:{distance_correlation(np.asarray(best_data['input'].values,dtype=float), np.asarray(best_data['target'].values,dtype=float)):.2f}",
                     showarrow=False,
                     bgcolor='white',
                     bordercolor='black',
@@ -450,7 +450,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
     try:
         logger.info(f"Creating interactive 3D plot {n} for {x}, {y}, {z}")
         safe_n = sanitize_filename(n)
-        if safe_n in completed_plots or plot_condition(sanitize_filename(x+y+z)):
+        if safe_n in completed_plots:
             logger.info(f"Skipping plot {n}: already completed.")
             return
         
