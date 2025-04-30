@@ -8,7 +8,44 @@
 \setmargins{2.5cm}{1.5cm}{16.5cm}{23.42cm}{10pt}{1cm}{0pt}{2cm}
 %margen izquierdo, superior, anchura del texto, altura del texto, altura de los encabezados, espacio entre el texto y los encabezados, altura del pie de página, espacio entre el texto y el pie de página
 \usepackage{hyperref}
+\usepackage{listings} 
+\usepackage{xcolor}
+% Define custom colors to match your screenshot
+\definecolor{kwcolor}{RGB}{197,134,192}    % pinkish for keywords
+\definecolor{comcolor}{RGB}{106,153,85}    % green for comments
+\definecolor{strcolor}{RGB}{206,145,120}   % salmon for strings
+\definecolor{typecolor}{RGB}{86,156,214}   % light blue for types/modules
+\definecolor{funccolor}{RGB}{220,220,170}  % yellowish for function calls
+\definecolor{varcolor}{RGB}{156,220,254}   % cyan for imported variables
+\definecolor{numcolor}{RGB}{181,206,168}   % soft green for numbers
 
+% Configure listings for Python
+\lstset{
+  language=Python,
+  frame=tb,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{kwcolor}\bfseries,
+  commentstyle=\color{comcolor}\itshape,
+  stringstyle=\color{strcolor},
+  numberstyle=\tiny\color{gray},
+  numbers=none,
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=4,
+  emphstyle=\color{typecolor},
+  alsoletter={.}, % allows highlighting dot-access
+  literate=%
+    *{=}{{=}}1
+     {+}{{+}}1
+     {-}{{-}}1
+     {*}{{*}}1
+     {>}{{>}}1
+     {<}{{<}}1
+}
 \usepackage{csquotes}% Recommended
 \usepackage[minnames=1,maxnames=2,maxbibnames = 3, style=authoryear, bibstyle = authoryear, backend=bibtex, giveninits=true, block = none, isbn = false, url = false, doi = false, eprint = false]{biblatex}
 \usepackage{float}
@@ -217,7 +254,100 @@ consiste en el siguiente conjunto de pasos:
     \caption{Diagrama de los bucles utilizados en PYSR. \autocite{cranmerInterpretableMachineLearning2023}}
     \label{fig:imagenes_lado_a_ladoo}
 \end{figure}
-\section{Análisis de relaciones estructurales}
+
+A continuación vamos a ver como se ha implementado el modelo de SR para obtener resultados.
+
+
+\begin{lstlisting}[language=Python, caption=Implementación del modelo de regresión simbólica, basicstyle=\tiny,label={code:1}]
+    def symbolic_regression(df, input_cols, target_col, threshold=0.2):
+        """
+        Esta función procesa los datos, ajusta el modelo de regresión simbólica (SR) y cuantifica su ajuste.
+    
+        _________________________________ENTRADAS________________________________
+        df: DataFrame con los datos originales.
+        input_cols: Lista con 1 o 2 columnas del DataFrame usadas como variables independientes.
+                    - Si es 1, se asume una relación 2D.
+                    - Si son 2, se asume una relación 3D.
+        target_col: Nombre de la columna objetivo (variable dependiente).
+        threshold: Umbral para la varianza explicada por la tercera componente (en caso 3D).
+                   Por defecto es 0.2, es decir, el modelo es aceptable si el 80% de los datos
+                   están contenidos en el plano de entrada.
+    
+        _________________________________SALIDAS________________________________
+        - best_expr: Mejor expresión simbólica encontrada (en formato SymPy) si cumple el umbral.
+        - métrica: Varianza explicada o RMSE según el caso.
+        - datos: Datos combinados usados para visualización o evaluación.
+        """
+    
+        # Extraer variables independientes y dependientes
+        X = df[input_cols].values
+        y = df[target_col].values
+    
+        # Dividir los datos en entrenamiento y prueba
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.3, random_state=12
+        )
+    
+        # Ajustar el modelo de regresión simbólica con los datos de entrenamiento
+        model = PySRRegressor(
+            binary_operators=["+", "-", "*", "/", "^"],
+            unary_operators=["exp", "log", "sqrt"],
+            model_selection="best",
+            verbosity=0,
+            constraints={'^': (-2, 2)}
+        )
+        model.fit(X_train, y_train)
+    
+        # Predecir con el modelo ajustado
+        y_pred = model.predict(X_test)
+    
+        # Normalizar los datos para evaluación (evita sesgos por escalas)
+        scaler_X = StandardScaler()
+        X_test_scaled = scaler_X.fit_transform(X_test)
+    
+        scaler_y = StandardScaler()
+        y_test_scaled = scaler_y.fit_transform(y_test.reshape(-1, 1)).ravel()
+        y_pred_scaled = scaler_y.transform(y_pred.reshape(-1, 1)).ravel()
+    
+        # Juntar las predicciones con los datos de entrada
+        PCA_data = np.hstack((X_test, y_pred.reshape(-1, 1)))
+    
+        if len(input_cols) == 2:
+            # Caso tridimensional: evaluar el plano de entrada y su capacidad explicativa
+    
+            # Combinar entradas normalizadas y predicción para PCA
+            data_combined = np.hstack((X_test_scaled, y_pred_scaled.reshape(-1, 1)))
+    
+            # Aplicar PCA a 3 componentes
+            pca = PCA(n_components=3)
+            pca.fit(data_combined)
+            explained_variance = pca.explained_variance_ratio_
+    
+            # Varianza explicada por la tercera componente (z)
+            third_component_variance = explained_variance[2]
+    
+            print(f"Varianza explicada por la tercera componente: {third_component_variance:.4f}")
+    
+            # Si la varianza es menor al umbral, aceptamos el modelo
+            if third_component_variance <= threshold:
+                best_expr = model.sympy()
+                return best_expr, third_component_variance, PCA_data
+            else:
+                return None, third_component_variance, PCA_data
+    
+        else:
+            # Caso bidimensional: usar error cuadrático medio como métrica
+            rmse = root_mean_squared_error(y_test_scaled, y_pred_scaled)
+            print(f"RMSE: {rmse:.4f}")
+    
+            # Retornar la mejor expresión encontrada junto con la métrica
+            best_expr = model.sympy()
+            return best_expr, rmse, y_pred, y_test
+    \end{lstlisting}
+
+De esta forma podemos obtener las expresiones, evaluarlas y cuantificar su calidad.
+
+\section{Metodología}
 
 Para proceder al análisis de los datos lo primero es centrarse en posbles relaciones ya conocidas de forma que podamos reducir el número de posibles relaciones, como ya se ha comentado 
 en la sección (EGS), no todas las relaciones son interesante, ya sea por el tipo de dato que tenemos o porque no haya una motivación física detrás con la que se pueda argumentar la existencia de dicha relación
@@ -260,6 +390,8 @@ Dadas las dimensiones de estos gráficos y el número límitado de páginas de e
     \end{enumerate}
 \end{itemize}
 
+
+
 \subsection{Previo y limpieza de los datos}
 
 Una vez acotadas las posibles relaciones que esperamos encontrar es necesario profundizar en la naturaleza de los datos con 
@@ -293,11 +425,37 @@ Para estudiar esta relación se han usado los gráficos de dispersión de la fig
     \label{fig:MSFR}
 \end{figure}
 
-Para obtener las siguientes relaciones finales se ha filtrado el gráfico que presenta el menor \textit{Root Mean Square Error (RMSE)}. El RMSE es una medida de la diferencia entre los valores predichos por un modelo y los valores observados. 
+Para obtener las siguientes relaciones finales se ha filtrado el gráfico que presenta el menor \textit{Root Mean Square Error (RMSE)} (Ver \ref{code:1}). El RMSE es una medida de la diferencia entre los valores predichos por un modelo y los valores observados. 
 \begin{equation}
     RMSE = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2}
 \end{equation}
 donde $y_i$ son los valores observados, $\hat{y}_i$ son los valores predichos por el modelo y $n$ es el número total de observaciones. Un RMSE bajo indica que el modelo se ajusta bien a los datos, mientras que un RMSE alto sugiere que el modelo no se ajusta bien, por lo que nos quedamos con el modelo que tiene el menor RMSE.
+
+\subsection{Análisis de relaciones estructurales 3D}
+
+En el caso de las relaciones entre 3 parámetros, el análisis es más complicado, ya que no solo se tiene que tener en cuenta la relación entre los tres parámetros, si no también la forma en la que estos se distribuyen; especialmente para el caso en el que buscamos un \textit{Plano fundamental}. 
+Es por eso que es necesario cuantificar cuando aparece un plano al representar los 3 parámetros, para ello se ha empleado el \textit{Explained Variance Ratio (EVR)}. El EVR se define como:
+\begin{equation}
+    EVR_i=\frac{\lambda_i}{\sum_j^n\lambda_j}
+\end{equation}
+En donde $\lambda_i$ es el autovalor de la componente $i\in\{x,y,z\}$ y $n$ es el número de componentes principales, en este caso $n=3$.
+El EVR es una medida de la varianza explicada por cada componente principal en un análisis de componentes principales (PCA). 
+En este caso, el EVR se utiliza para evaluar la cantidad de varianza que se explica por el plano en comparación con la varianza total de los datos. Un EVR alto indica que el plano captura una gran parte de la variabilidad de los datos, lo que sugiere que los datos están bien representados por el plano.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
+    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
+    \label{fig:MSFR}
+\end{figure}
+
+Para obtener la expresión final se filtrado por el EVR de cada una de las gráficas del grid y seleccionado la menor de todas (Ver \ref{code:1}).
+
+
+
+\section{Resultados}
+
+\subsection{Relaciones estructurales en 2D}
 \subsubsection{Relación Masa-Tasa de formación estelar}
 \begin{figure}[H]
     \centering
@@ -317,18 +475,6 @@ donde $y_i$ son los valores observados, $\hat{y}_i$ son los valores predichos po
 \subsubsection{Relación Tasa de formación estelar-Magnitud}
 \subsubsection{Relación }
 \subsection{Análisis de relaciones estructurales 3D}
-
-En el caso de las relaciones entre 3 parámetros, el análisis es más complicado, ya que no solo se tiene que tener en cuenta la relación entre los tres parámetros, si no también la forma en la que estos se distribuyen; especialmente para el caso en el que buscamos un \textit{Plano fundamental}. 
-Es por eso que es necesario cuantificar cuando aparece un plano al representar los 3 parámetros, para ello se ha empleado el \textit{Explained Variance Ratio (EVR)}. El EVR es una medida de la varianza explicada por cada componente principal en un análisis de componentes principales (PCA). 
-En este caso, el EVR se utiliza para evaluar la cantidad de varianza que se explica por el plano en comparación con la varianza total de los datos. Un EVR alto indica que el plano captura una gran parte de la variabilidad de los datos, lo que sugiere que los datos están bien representados por el plano.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
-    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
-    \label{fig:MSFR}
-\end{figure}
-
 \subsubsection{Relación Masa-Redshift-Tasa de formación estelar}
 \section{Conclusiones}
 
