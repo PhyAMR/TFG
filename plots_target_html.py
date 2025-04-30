@@ -104,6 +104,8 @@ def symbolic_regression(df, input_cols, target_col, threshold=0.2):
     y_test_scaled = scaler_y.fit_transform(y_test.reshape(-1, 1)).ravel()
     y_pred_scaled = scaler_y.transform(y_pred.reshape(-1, 1)).ravel()
 
+    PCA_data = np.hstack((X_test, y_pred.reshape(-1, 1)))
+
     if len(input_cols) == 2:
         # Combinar entradas y predicciones normalizadas
         data_combined = np.hstack((X_test_scaled, y_pred_scaled.reshape(-1, 1)))
@@ -121,9 +123,9 @@ def symbolic_regression(df, input_cols, target_col, threshold=0.2):
         # Evaluate if the model meets the threshold
         if third_component_variance <= threshold:
             best_expr = model.sympy()
-            return best_expr, third_component_variance
+            return best_expr, third_component_variance, PCA_data
         else:
-            return None, third_component_variance
+            return None, third_component_variance, PCA_data
     else:
         # Calculate RMSE
         rmse = root_mean_squared_error(y_test_scaled, y_pred_scaled)
@@ -132,7 +134,7 @@ def symbolic_regression(df, input_cols, target_col, threshold=0.2):
         # Evaluate if the model meets the threshold
         
         best_expr = model.sympy()
-        return best_expr, rmse
+        return best_expr, rmse, y_pred, y_test
         
 
 def remove_empty_directories(start_dir):
@@ -336,6 +338,8 @@ def plot2d(df, x, y, dire, n, heatmap_column, dataset_dir,plot_collector):
         best_params = None
         best_expr = None
         best_data = None
+        Y_pred = None
+        Y_test = None
         
         for log_x, log_y in combinations:
             try:
@@ -343,12 +347,14 @@ def plot2d(df, x, y, dire, n, heatmap_column, dataset_dir,plot_collector):
                 y_trans = np.log10(df[y]) if log_y else df[y]
                 temp_df = pd.DataFrame({'input': x_trans, 'target': y_trans})
                 
-                expr, chi2 = symbolic_regression(temp_df, ['input'], 'target')
+                expr, chi2, y_pred, y_test = symbolic_regression(temp_df, ['input'], 'target')
                 if chi2 < best_chi2 and expr is not None:
                     best_chi2 = chi2
                     best_params = (log_x, log_y)
                     best_expr = expr
                     best_data = temp_df.copy()
+                    Y_pred = y_pred
+                    Y_test = y_test
             except Exception as e:
                 logger.warning(f"Failed combination ({log_x}, {log_y}): {e}")
         
@@ -379,7 +385,7 @@ def plot2d(df, x, y, dire, n, heatmap_column, dataset_dir,plot_collector):
                     y=0.95,
                     xref='paper',
                     yref='paper',
-                    text=f"{best_expr}<br>RMSE: {root_mean_squared_error(np.asarray(best_data['input'].values,dtype=float), np.asarray(best_data['target'].values,dtype=float)):.2f}<br>DCOR:{distance_correlation(np.asarray(best_data['input'].values,dtype=float), np.asarray(best_data['target'].values,dtype=float)):.2f}",
+                    text=f"{best_expr}<br>RMSE: {root_mean_squared_error(np.asarray(Y_test,dtype=float), np.asarray(Y_pred,dtype=float)):.2f}<br>DCOR:{distance_correlation(np.asarray(best_data['input'].values,dtype=float), np.asarray(best_data['target'].values,dtype=float)):.2f}",
                     showarrow=False,
                     bgcolor='white',
                     bordercolor='black',
@@ -462,6 +468,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
         best_params = None
         best_expr = None
         best_data = None
+        PCA_Data = None
         
         for log_x, log_y, log_z in combinations:
             try:
@@ -474,12 +481,13 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
                     'z': z_trans
                 })
                 
-                expr, chi2 = symbolic_regression(temp_df, ['x', 'y'], 'z')
+                expr, chi2, PCA_data = symbolic_regression(temp_df, ['x', 'y'], 'z')
                 if chi2 < best_chi2 and expr is not None:
                     best_chi2 = chi2
                     best_params = (log_x, log_y, log_z)
                     best_expr = expr
                     best_data = temp_df.copy()
+                    PCA_Data = PCA_data
             except Exception as e:
                 logger.warning(f"Failed combination {log_x, log_y, log_z}: {e}")
         
@@ -488,6 +496,13 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
             return
             
         log_x_best, log_y_best, log_z_best = best_params
+
+        pca = PCA(n_components=3)
+        pca.fit(PCA_Data)
+        explained_variance = pca.explained_variance_ratio_
+
+        # Extract the explained variance of the third component
+        third_component_variance = explained_variance[2]
         
         # Create Plotly figure
         fig = go.Figure()
@@ -507,7 +522,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
                     dict(
                         x=0.05,
                         y=0.95,
-                        text=f"{best_expr}<br>EVR: {best_chi2:.2f}",
+                        text=f"{best_expr}<br>EVR: {third_component_variance:.2f}",
                         showarrow=False,
                         font=dict(size=12),
                         bordercolor='black',
