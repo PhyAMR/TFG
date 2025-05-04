@@ -258,7 +258,7 @@ consiste en el siguiente conjunto de pasos:
 A continuación vamos a ver como se ha implementado el modelo de SR para obtener resultados.
 
 
-\begin{lstlisting}[language=Python, caption=Implementación del modelo de regresión simbólica, basicstyle=\tiny,label={code:1}]
+\begin{lstlisting}[language=Python, caption=Implementación del modelo de regresión simbólica, basicstyle=\tiny,label=lst:foo]
     def symbolic_regression(df, input_cols, target_col, threshold=0.2):
         """
         Esta función procesa los datos, ajusta el modelo de regresión simbólica (SR) y cuantifica su ajuste.
@@ -351,14 +351,14 @@ De esta forma podemos obtener las expresiones, evaluarlas y cuantificar su calid
 
 Para proceder al análisis de los datos lo primero es centrarse en posbles relaciones ya conocidas de forma que podamos reducir el número de posibles relaciones, como ya se ha comentado 
 en la sección (EGS), no todas las relaciones son interesante, ya sea por el tipo de dato que tenemos o porque no haya una motivación física detrás con la que se pueda argumentar la existencia de dicha relación
-\footnote{Aunque lo idela fuera no tener ningún sesgo, dado la dimensionalidad del conjunto de datos lo óptimo es filtrar por relaciones ya conocidas y hacer variaciones de las mismas para explorar otras nuevas}.
+\footnote{Aunque lo ideal fuera no tener ningún sesgo, dado la dimensionalidad del conjunto de datos lo óptimo es filtrar por relaciones ya conocidas y hacer variaciones de las mismas para explorar otras nuevas}.
 
-Una forma sencilla, visual y efectiva de iniciar la busqueda de relaciones es mediante el uso de \textit{pairplots}. Este tipo de gráficos nos permiten tener de un primer vistazo una imagen del comportamiento de los datos. 
+Una forma sencilla, visual y efectiva de iniciar la busqueda de relaciones es mediante el uso de \textit{Pairplots}. Este tipo de gráficos nos permiten tener de un primer vistazo una imagen del comportamiento de los datos. 
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.35\textwidth]{custom_pairplots/SFR/Fontana_SFR_pairplot.png}
-    \caption{Ejemplo de Pairplot. En este caso se muestra un Pairplot para los datos de Fontana}
+    \caption{Ejemplo de Pairplot. En este caso se muestra un Pairplot para los datos de tasa de formación estelar de Fontana}
     \label{fig:pair_ex}
 \end{figure}
 
@@ -382,7 +382,8 @@ Dadas las dimensiones de estos gráficos y el número límitado de páginas de e
 \begin{itemize}
     \item Los diferentes modelos de ajuste a los datos (denotados con tau, invtau, lin, cons, etc) 
     suelen obtener datos similares, en los pairplots se ve que (en muchos casos) forman una recta cuando se gráfican entre sí. Esto nos permite poder comparar diferentes modelos entre si y cambiar el modelo sencillamente usando la recta de ajuste.
-    \item El punto anterior solo es aplicable cuando nos comparamos modelos de un mismo autor, ya que aunque siguen formando una recta la dispersión es mucho mayor y no es un procedimiento preciso en este caso.
+    \item En el caso de las tasas de formación estelar, esto no se cumple, y son más dependientes del modelo.
+    \item El primer punto solo es aplicable cuando nos comparamos modelos de un mismo autor, ya que aunque siguen formando una recta la dispersión es mucho mayor y no es un procedimiento preciso en este caso.
     \item Al igual ocurre si la medida tiene en cuenta la emisión nebular o no, en este caso la dispersión es mucho mayor y no se puede comparar entre si.
     \item A continuación una lista de posibles relaciones que quedan excluidas una vez analizados los gráficos:
     \begin{enumerate}
@@ -425,7 +426,7 @@ Para estudiar esta relación se han usado los gráficos de dispersión de la fig
     \label{fig:MSFR}
 \end{figure}
 
-Para obtener las siguientes relaciones finales se ha filtrado el gráfico que presenta el menor \textit{Root Mean Square Error (RMSE)} (Ver \ref{code:1}). El RMSE es una medida de la diferencia entre los valores predichos por un modelo y los valores observados. 
+Para obtener las siguientes relaciones finales se ha filtrado el gráfico que presenta el menor \textit{Root Mean Square Error (RMSE)} (Ver \ref{lst:foo}). El RMSE es una medida de la diferencia entre los valores predichos por un modelo y los valores observados. Se define como:
 \begin{equation}
     RMSE = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2}
 \end{equation}
@@ -444,12 +445,12 @@ En este caso, el EVR se utiliza para evaluar la cantidad de varianza que se expl
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
+    \includegraphics[width=0.35\textwidth]{3d_BooMeLee_SFR_14a_deltau_solMass_yr_z_best.png}
     \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
-    \label{fig:MSFR}
+    \label{fig:3dexample}
 \end{figure}
 
-Para obtener la expresión final se filtrado por el EVR de cada una de las gráficas del grid y seleccionado la menor de todas (Ver \ref{code:1}).
+Para obtener la expresión final se filtrado por el EVR de cada una de las gráficas del grid y seleccionado la menor de todas (Ver \ref{lst:foo}).
 
 
 
@@ -477,6 +478,9 @@ Para obtener la expresión final se filtrado por el EVR de cada una de las gráf
 \subsection{Análisis de relaciones estructurales 3D}
 \subsubsection{Relación Masa-Redshift-Tasa de formación estelar}
 \section{Conclusiones}
+
+Como se puede observar en los pairplots, la variables de metalicidad (met), extinción ($A_{v}$) y exceso de color ($E(B-V)$) 
+formán agrupaciones, por lo que lo mejor sería determinar los grupos de galaxias que se definen con estas variables y estudiar cada grupo por separado.
 
 %\bibliographystyle{plainnat} % We choose the "plain" reference style
 %\bibliography{refs} % Entries are in the refs.bib file

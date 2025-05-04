@@ -104,7 +104,7 @@ def symbolic_regression(df, input_cols, target_col, threshold=0.2):
     y_test_scaled = scaler_y.fit_transform(y_test.reshape(-1, 1)).ravel()
     y_pred_scaled = scaler_y.transform(y_pred.reshape(-1, 1)).ravel()
 
-    PCA_data = np.hstack((X_test, y_pred.reshape(-1, 1)))
+    
 
     if len(input_cols) == 2:
         # Combinar entradas y predicciones normalizadas
@@ -123,9 +123,9 @@ def symbolic_regression(df, input_cols, target_col, threshold=0.2):
         # Evaluate if the model meets the threshold
         if third_component_variance <= threshold:
             best_expr = model.sympy()
-            return best_expr, third_component_variance, PCA_data
+            return best_expr, third_component_variance, y_pred, y_test
         else:
-            return None, third_component_variance, PCA_data
+            return None, third_component_variance, y_pred, y_test
     else:
         # Calculate RMSE
         rmse = root_mean_squared_error(y_test_scaled, y_pred_scaled)
@@ -275,17 +275,20 @@ def plot_condition(name, unit_groups={
         "erg_s_Hz"       
     ],
     "StarFormation_Plots": [
-        "solMass_yr"  
+        "solMass_yr",
+        "SFR"  
     ],
     "Metallicity_Plots": [
-        "solMet"     
+        "solMet" ,
+        "met"    
     ],
     "Luminosity_Plots": [
         "erg_s_Hz",  
         "dex_solLum"  
     ],
     "Mass_Plots": [
-        "dex_solMass"  
+        "dex_solMass",
+        r"M_\d+"  
     ]
 }):
     """
@@ -385,7 +388,7 @@ def plot2d(df, x, y, dire, n, heatmap_column, dataset_dir,plot_collector):
                     y=0.95,
                     xref='paper',
                     yref='paper',
-                    text=f"{best_expr}<br>RMSE: {root_mean_squared_error(np.asarray(Y_test,dtype=float), np.asarray(Y_pred,dtype=float)):.2f}<br>DCOR:{distance_correlation(np.asarray(best_data['input'].values,dtype=float), np.asarray(best_data['target'].values,dtype=float)):.2f}",
+                    text=f"{best_expr}<br>RMSE: {root_mean_squared_error(np.asarray(Y_test,dtype=float), np.asarray(Y_pred,dtype=float)):.3f}<br>DCOR:{distance_correlation(np.asarray(best_data['input'].values,dtype=float), np.asarray(best_data['target'].values,dtype=float)):.3f}",
                     showarrow=False,
                     bgcolor='white',
                     bordercolor='black',
@@ -468,7 +471,8 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
         best_params = None
         best_expr = None
         best_data = None
-        PCA_Data = None
+        Y_test = None
+        Y_pred = None
         
         for log_x, log_y, log_z in combinations:
             try:
@@ -481,13 +485,15 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
                     'z': z_trans
                 })
                 
-                expr, chi2, PCA_data = symbolic_regression(temp_df, ['x', 'y'], 'z')
+                expr, chi2, y_test, y_pred = symbolic_regression(temp_df, ['x', 'y'], 'z')
                 if chi2 < best_chi2 and expr is not None:
                     best_chi2 = chi2
                     best_params = (log_x, log_y, log_z)
                     best_expr = expr
                     best_data = temp_df.copy()
-                    PCA_Data = PCA_data
+                    Y_test = y_test
+                    Y_pred = y_pred
+                    
             except Exception as e:
                 logger.warning(f"Failed combination {log_x, log_y, log_z}: {e}")
         
@@ -497,12 +503,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
             
         log_x_best, log_y_best, log_z_best = best_params
 
-        pca = PCA(n_components=3)
-        pca.fit(PCA_Data)
-        explained_variance = pca.explained_variance_ratio_
-
-        # Extract the explained variance of the third component
-        third_component_variance = explained_variance[2]
+       
         
         # Create Plotly figure
         fig = go.Figure()
@@ -522,7 +523,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
                     dict(
                         x=0.05,
                         y=0.95,
-                        text=f"{best_expr}<br>EVR: {third_component_variance:.2f}",
+                        text=f"{best_expr}<br>RMSE: {root_mean_squared_error(np.asarray(Y_test,dtype=float), np.asarray(Y_pred,dtype=float)):.3f}<br>EVR: {chi2:.3f}",
                         showarrow=False,
                         font=dict(size=12),
                         bordercolor='black',
@@ -576,7 +577,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
             fig.add_trace(go.Surface(
                 x=X,
                 y=Y,
-                z=Z,
+                z=np.asarray(Z,dtype=float),
                 colorscale='Reds',
                 opacity=0.5,
                 showscale=False,
@@ -711,8 +712,8 @@ def process_dataframe(df: pd.DataFrame,
                         combo_key = tuple(sorted(combo))  # Sort for consistent tracking
                         if combo_key not in plotted_3d:
                             safe_combo = [sanitize_filename(col) for col in combo]
-                            plot_name = f"{dataset_name}_{'_'.join(safe_combo)}"
-                            if plot_condition(plot_name):
+                            plot_name = f"{dataset_name}_{'_'.join(safe_combo)}_{target}"
+                            if plot_condition(plot_name) or target not in safe_combo:
                                 plot3d(dataset_df, *combo,target, plot3d_dir, plot_name, heatmap_column, dataset_dir,plot_collector)
                                 plotted_3d.add(combo_key)
                             else:
@@ -1143,7 +1144,7 @@ if __name__ == "__main__":
         completed_plots = load_completed_plots()
         process_dataframe(
         targets_df, 
-        regexdic,
+        regexdic2,
         f"D:/TFG/plots_html/{tar}", 
         heatmap_column='z_best',  # Use corrected column name
         include_base=False,
