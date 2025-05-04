@@ -275,20 +275,17 @@ def plot_condition(name, unit_groups={
         "erg_s_Hz"       
     ],
     "StarFormation_Plots": [
-        "solMass_yr",
-        "SFR"  
+        "solMass_yr" 
     ],
     "Metallicity_Plots": [
-        "solMet" ,
-        "met"    
+        "solMet"     
     ],
     "Luminosity_Plots": [
         "erg_s_Hz",  
         "dex_solLum"  
     ],
     "Mass_Plots": [
-        "dex_solMass",
-        r"M_\d+"  
+        "dex_solMass"  
     ]
 }):
     """
