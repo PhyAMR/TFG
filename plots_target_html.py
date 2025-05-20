@@ -11,11 +11,13 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from dcor import distance_correlation
-import sympy
+from sympy import symbols, lambdify
+from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
+
 import plotly.graph_objects as go
 import plotly.io as pio
 from sklearn.model_selection import train_test_split
-from pysr import PySRRegressor
+from pysr import PySRRegressor, TemplateExpressionSpec
 from sklearn.metrics import root_mean_squared_error
 
 class PlotCollector:
@@ -27,50 +29,63 @@ class PlotCollector:
         self.figures.append(fig)
         self.plot_count += 1
 
-def create_combined_html(plot_collector, filename="all_plots.html"):
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    if len(plot_collector.figures) != 0:
+def create_combined_html(plot_collector, filename="all_plots.html", chunk_size=10):
+    os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
+
+    if not plot_collector.figures:
+        logger.info("No plots to save.")
+        return
+
+    name, ext = os.path.splitext(filename)
+    total_plots = len(plot_collector.figures)
+
+    for i in range(0, total_plots, chunk_size):
+        chunk = plot_collector.figures[i:i+chunk_size]
+        chunk_index = i // chunk_size
+        chunk_filename = f"{name}_{chunk_index+1}{ext}" if total_plots > chunk_size else filename
+
         html_str = '''<!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>All Interactive Plots</title>
-            <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-            <style>
-                .plot-container { 
-                    margin: 20px;
-                    padding: 20px;
-                    border: 1px solid #ddd;
-                    page-break-inside: avoid;
-                }
-                h2.plot-title {
-                    margin-bottom: 10px;
-                    color: #2c3e50;
-                }
-            </style>
-        </head>
-        <body>
-        <h1 style="text-align: center;">Interactive Analysis Plots</h1>
-        '''
-        
-        for idx, fig in enumerate(plot_collector.figures):
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive Plots</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        .plot-container { 
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            page-break-inside: avoid;
+        }
+        h2.plot-title {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+<h1 style="text-align: center;">Interactive Analysis Plots</h1>
+'''
+
+        for idx, fig in enumerate(chunk, start=i):
             plot_html = fig.to_html(
                 full_html=False,
                 include_plotlyjs='cdn',
                 div_id=f'plot-{idx}'
             )
             html_str += f'''
-            <div class="plot-container">
-                <h2 class="plot-title">Plot {idx+1} of {plot_collector.plot_count}</h2>
-                {plot_html}
-            </div>
-            '''
-        
+<div class="plot-container">
+    <h2 class="plot-title">Plot {idx+1} of {plot_collector.plot_count}</h2>
+    {plot_html}
+</div>
+'''
+
         html_str += '</body></html>'
-        
-        with open(filename, 'w') as f:
+
+        with open(chunk_filename, 'w', encoding='utf-8') as f:
             f.write(html_str)
-        logger.info(f"Saved combined plots to {filename}")
+
+        logger.info(f"Saved {len(chunk)} plots to {chunk_filename}")
 
 
 
@@ -83,14 +98,28 @@ def symbolic_regression(df, input_cols, target_col, threshold=0.2):
         X, y, test_size=0.3, random_state=12
     )
 
-    # Ajustar el modelo de regresión simbólica con datos originales
+    if len(input_cols) == 2:
+        spec = TemplateExpressionSpec(
+    expressions=["f", "g"],
+    variable_names=["x0", "x1"],
+    combine="f(x0) + g(x1)"
+)
+    else:
+        spec = TemplateExpressionSpec(
+        expressions=["f"],
+        variable_names=["x0"],
+        combine="f(x0)"
+        )
+    
     model = PySRRegressor(
         binary_operators=["+", "-", "*", "/", "^"],
         unary_operators=["exp", "log", "sqrt"],
         model_selection="best",
         verbosity=0,
-        constraints={'^': (-2, 2)}
+        constraints={'^': (-2, 2)},
+        expression_spec=spec
     )
+    # Ajustar el modelo de regresión simbólica con datos originales
     model.fit(X_train, y_train)
 
     # Predecir en el conjunto de prueba
@@ -104,7 +133,7 @@ def symbolic_regression(df, input_cols, target_col, threshold=0.2):
     y_test_scaled = scaler_y.fit_transform(y_test.reshape(-1, 1)).ravel()
     y_pred_scaled = scaler_y.transform(y_pred.reshape(-1, 1)).ravel()
 
-    
+    PCA_data = np.hstack((X_test, y_pred.reshape(-1, 1)))
 
     if len(input_cols) == 2:
         # Combinar entradas y predicciones normalizadas
@@ -122,10 +151,10 @@ def symbolic_regression(df, input_cols, target_col, threshold=0.2):
 
         # Evaluate if the model meets the threshold
         if third_component_variance <= threshold:
-            best_expr = model.sympy()
-            return best_expr, third_component_variance, y_pred, y_test
+            best_expr = model.get_best()['equation']
+            return best_expr, third_component_variance, y_pred, y_test, PCA_data
         else:
-            return None, third_component_variance, y_pred, y_test
+            return None, third_component_variance, y_pred, y_test, PCA_data
     else:
         # Calculate RMSE
         rmse = root_mean_squared_error(y_test_scaled, y_pred_scaled)
@@ -133,7 +162,7 @@ def symbolic_regression(df, input_cols, target_col, threshold=0.2):
 
         # Evaluate if the model meets the threshold
         
-        best_expr = model.sympy()
+        best_expr = model.get_best()['equation']
         return best_expr, rmse, y_pred, y_test
         
 
@@ -271,8 +300,7 @@ def plot_condition(name, unit_groups={
         "Gyr"
     ],
     "Magnitude_Plots": [
-        "mag",
-        "erg_s_Hz"       
+        "mag"       
     ],
     "StarFormation_Plots": [
         "solMass_yr" 
@@ -306,20 +334,6 @@ def plot_condition(name, unit_groups={
     return True
 
 
-def generate_centered_grid(data_x, data_y, n_points=50, std_scale=1.5):
-    """Generate grid centered around data mean with std-scaled range"""
-    x_mean = np.mean(data_x)
-    x_std = np.std(data_x)
-    y_mean = np.mean(data_y)
-    y_std = np.std(data_y)
-    
-    return np.meshgrid(
-        np.linspace(x_mean - std_scale*x_std, x_mean + std_scale*x_std, n_points),
-        np.linspace(y_mean - std_scale*y_std, y_mean + std_scale*y_std, n_points)
-    )
-
-
-# ... (keep all imports except remove matplotlib and add plotly)
 
 
 def plot2d(df, x, y, dire, n, heatmap_column, dataset_dir,plot_collector):
@@ -426,8 +440,29 @@ def plot2d(df, x, y, dire, n, heatmap_column, dataset_dir,plot_collector):
         
         # Add regression line
         try:
+            # Step 1: Extract the right-hand side of the expression
+            rhs = best_expr.split('=', 1)[1].strip()
+
+            # Step 2: Replace placeholders with valid variable names
+            rhs = rhs.replace("#1", "x0").replace("#2", "x1")
+
+            # Step 3: Replace '^' with '**' for exponentiation
+            rhs = rhs.replace("^", "**")
+
+            # Step 4: Define the symbols
+            x0 = symbols("x0")
+
+            # Step 5: Define the local dictionary for variable mapping
+            local_dict = {"x0": x0}
+
+            # Step 6: Define the transformations to handle implicit multiplication
+            transformations = standard_transformations + (implicit_multiplication_application,)
+
+            # Step 7: Parse the expression
+            expr = parse_expr(rhs, local_dict=local_dict, transformations=transformations)
+
             x_vals = np.linspace(best_data['input'].min(), best_data['input'].max(), 100)
-            expr_func = sympy.lambdify(sympy.Symbol('x0'), best_expr, 'numpy')
+            expr_func = lambdify((x0), expr, 'numpy')
             y_vals = expr_func(x_vals)
             
             fig.add_trace(go.Scatter(
@@ -470,6 +505,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
         best_data = None
         Y_test = None
         Y_pred = None
+        PCA_Data = None
         
         for log_x, log_y, log_z in combinations:
             try:
@@ -482,7 +518,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
                     'z': z_trans
                 })
                 
-                expr, chi2, y_test, y_pred = symbolic_regression(temp_df, ['x', 'y'], 'z')
+                expr, chi2, y_test, y_pred, pca_data = symbolic_regression(temp_df, ['x', 'y'], 'z')
                 if chi2 < best_chi2 and expr is not None:
                     best_chi2 = chi2
                     best_params = (log_x, log_y, log_z)
@@ -490,7 +526,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
                     best_data = temp_df.copy()
                     Y_test = y_test
                     Y_pred = y_pred
-                    
+                    PCA_Data = pca_data
             except Exception as e:
                 logger.warning(f"Failed combination {log_x, log_y, log_z}: {e}")
         
@@ -500,7 +536,12 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
             
         log_x_best, log_y_best, log_z_best = best_params
 
-       
+        pca = PCA(n_components=3)
+        pca.fit(PCA_Data)
+        explained_variance = pca.explained_variance_ratio_
+
+        # Extract the explained variance of the third component
+        third_component_variance = explained_variance[2]
         
         # Create Plotly figure
         fig = go.Figure()
@@ -510,7 +551,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
         z_label = f"log10({z})" if log_z_best else z
         
         fig.update_layout(
-            title=f"Best 3D Symbolic Fit: {z} = f({x}, {y})",
+            title=f"Best 3D Symbolic Fit: {z} = f({x})+g({y})",
             scene=dict(
                 xaxis_title=x_label,
                 yaxis_title=y_label,
@@ -520,7 +561,7 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
                     dict(
                         x=0.05,
                         y=0.95,
-                        text=f"{best_expr}<br>RMSE: {root_mean_squared_error(np.asarray(Y_test,dtype=float), np.asarray(Y_pred,dtype=float)):.3f}<br>EVR: {chi2:.3f}",
+                        text=f"{best_expr}<br>RMSE: {root_mean_squared_error(np.asarray(Y_test,dtype=float), np.asarray(Y_pred,dtype=float)):.3f}<br>EVR: {third_component_variance:.5f}",
                         showarrow=False,
                         font=dict(size=12),
                         bordercolor='black',
@@ -564,8 +605,37 @@ def plot3d(df, x, y, z, dire, n, heatmap_column, dataset_dir,plot_collector):
         
         # Add regression surface
         try:
-            x_sym, y_sym = sympy.symbols('x0 x1')
-            expr_func = sympy.lambdify((x_sym, y_sym), best_expr, 'numpy')
+            expr1 = best_expr.split(';',1)[0].strip()
+            expr2 = best_expr.split(';',1)[1].strip()
+            rhs1 = expr1.split('=')[1].strip()
+            rhs2 = expr2.split('=')[1].strip()
+            rhs1 = rhs1.replace("^", "**")
+            rhs2 = rhs2.replace("^", "**")
+            f = rhs1.replace("#1", "x0")
+            g = rhs2.replace("#1", "x1")
+
+            # Define the transformations to handle implicit multiplication
+            transformations = standard_transformations + (implicit_multiplication_application,)
+
+            # Parse the expression
+            
+
+            # Step 4: Define the symbols
+            x0, x1 = symbols("x0 x1")
+
+            # Step 5: Define the local dictionary for variable mapping
+            local_dict = {"x0": x0, "x1": x1}
+
+            # Step 6: Define the transformations to handle implicit multiplication
+            transformations = standard_transformations + (implicit_multiplication_application,)
+
+            # Step 7: Parse the expression
+            f2 = parse_expr(f, local_dict=local_dict, transformations=transformations)
+            g2 = parse_expr(g, local_dict=local_dict, transformations=transformations)
+
+            
+            expr_func = lambdify((x0,x1), f2+g2, 'numpy')
+            
             x_vals = np.linspace(best_data['x'].min(), best_data['x'].max(), 20)
             y_vals = np.linspace(best_data['y'].min(), best_data['y'].max(), 20)
             X, Y = np.meshgrid(x_vals, y_vals)
@@ -1101,8 +1171,8 @@ if __name__ == "__main__":
 
     # Clean values in-place using .where() for better performance
     df_numeric[mag_cols] = df_numeric[mag_cols].where(df_numeric[mag_cols] >= -50, np.nan)
-    df_numeric[m_cols] = df_numeric[m_cols].where(df_numeric[m_cols] >= 0, np.nan)
-    df_numeric[age_cols] = df_numeric[age_cols].where(df_numeric[age_cols] >= 0, np.nan)
+    df_numeric[m_cols] = df_numeric[m_cols].where(df_numeric[m_cols] > 0, np.nan)
+    df_numeric[age_cols] = df_numeric[age_cols].where(df_numeric[age_cols] > 0, np.nan)
 
     # Drop rows with any NaN values in mag columns
     df_numeric.dropna(subset=mag_cols, how='any', inplace=True)
@@ -1121,7 +1191,8 @@ if __name__ == "__main__":
     print("Number of columns in cleaned_numeric:", len(df_numeric.columns.tolist()))
     
 
-    targets = df_numeric.filter(regex=r'^M_\d+|^SFR|^L').columns.tolist()
+    targets = df_numeric.filter(regex=r'^SFR').columns.tolist()
+    targetsb = df_numeric.filter(regex=r'^M_\d+|^SFR|').columns.tolist()
         
     targets_df = df_numeric.filter(regex=r'^M_\d+|^SFR|^L|(mag)|met|z_best')
     print(targets)
@@ -1129,23 +1200,49 @@ if __name__ == "__main__":
     regexdic = {'Salvato': r'_11a|^z_best|^Salvato_z_peak',  'Barro': r'_2a|^z_best','Finkelstein': r'_4b|^z_best|^Finkelstein_z_peak','Pforr': r'_10c|^z_best|^Pforr_z_peak','Wikilind': r'_12a|^z_best|^Wiklind_z_peak','Wuyts': r'_13a|^z_best|^Wuyts_z_peak' }
     regexdic2= {'BooMeLee': r'_14a|^z_best', 'Fontana': r'_6a|^z_best|^Fontana_z_peak'}
     print(len(targets))
-    for t in targets:
+    """ for t in targets:
         tar = sanitize_filename(t)
 
         # Fix 4: Update process_dataframe call
 
-        CHECKPOINT_FILE = f"{tar}_html_plots.txt"
+        CHECKPOINT_FILE = f"{tar}_html_plots2.txt"
 
         
 
         completed_plots = load_completed_plots()
         process_dataframe(
         targets_df, 
-        regexdic2,
+        {'BooMeLee': r'_14a|^z_best'},
         f"D:/TFG/plots_html/{tar}", 
         heatmap_column='z_best',  # Use corrected column name
         include_base=False,
         target=t
 
     )
+    remove_empty_directories(f"D:/TFG/plots_html/{tar}")  """
+    group_tau      = targets_df.filter(regex=r'^z_best|_6a_tau(?: \^NEB)?')
+    group_deltau   = targets_df.filter(regex=r'^z_best|_6a_deltau')
+    group_invtau   = targets_df.filter(regex=r'^z_best|_6a_invtau')
+    groups = [group_tau,group_invtau,group_deltau]
+    for g in groups:
+        for t in targetsb:
+            
+            tar = sanitize_filename(t)
+
+            # Fix 4: Update process_dataframe call
+
+            CHECKPOINT_FILE = f"{tar}_html_plots2.txt"
+
+            
+
+            completed_plots = load_completed_plots()
+            process_dataframe(
+            g, 
+            {'Fontana': r'_6a|^z_best|^Fontana_z_peak'},
+            f"D:/TFG/plots_html/{tar}", 
+            heatmap_column='z_best',  # Use corrected column name
+            include_base=False,
+            target=t
+
+        )
     remove_empty_directories(f"D:/TFG/plots_html/{tar}") 

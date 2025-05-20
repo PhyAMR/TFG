@@ -1,5 +1,6 @@
 \documentclass[11pt, a4paper]{article} %tamaño mínimo de letra 11pto.
-
+\usepackage{witharrows}
+\usepackage{amsmath}
 \usepackage{graphicx} 
 \usepackage{subcaption}
 \usepackage[spanish]{babel} %Español 
@@ -110,7 +111,7 @@ estos datos.
 
 [Rsumen de lo encontrado]
 [Conclusiones]
-[Prespectiva]
+En este trabajo solo se ha filtrado por el redshift, además de eliminar outliers y valores mal obtenidos o calculados. Hacer un estudio de los grupos en los que se dividen las galaxias (por ejemplo metalicidad o extinción) permitiría obtener mejor relaciones.
 \vspace{10mm}
 
 {\bfseries \large Abstract: } \vspace{5mm} 
@@ -128,7 +129,7 @@ known relations, and see that other relations can be obtained from these data.
 
 [Abstract of what has been found]
 [Conclusions]
-[Outlook]
+In this work only the redshift has been filtered, in addition to removing outliers and poorly obtained or calculated values. A study of the groups in which galaxies are divided (for example metallicity or extinction) would allow better relationships to be obtained.
 
 \vspace{1cm}
 
@@ -145,7 +146,7 @@ known relations, and see that other relations can be obtained from these data.
 
 \section{Introducción}
 
-El objetivo principal de la física es tener la capcaidad de entender, y por consecuente, poder explicar los procesos que ocurren en 
+El objetivo principal de la física es tener la capacidad de entender, y por consecuente, poder explicar los procesos que ocurren en 
 nuestro universo. Desde hace ya varios siglos la observación ha sido una de las herramientas más útiles para poder tener indicios del comportamiento de estos procesos,
 como la relación $r\propto T^3$ descubierta por Kepler, o la predicción de nuevas partículas basandose en las propiedades y simetrias de un 
 determinado conjutno de partículas. \\
@@ -261,22 +262,22 @@ A continuación vamos a ver como se ha implementado el modelo de SR para obtener
 \begin{lstlisting}[language=Python, caption=Implementación del modelo de regresión simbólica, basicstyle=\tiny,label=lst:foo]
     def symbolic_regression(df, input_cols, target_col, threshold=0.2):
         """
-        Esta función procesa los datos, ajusta el modelo de regresión simbólica (SR) y cuantifica su ajuste.
+        Esta funcion procesa los datos, ajusta el modelo de regresion simbolica (SR) y cuantifica su ajuste.
     
         _________________________________ENTRADAS________________________________
         df: DataFrame con los datos originales.
         input_cols: Lista con 1 o 2 columnas del DataFrame usadas como variables independientes.
-                    - Si es 1, se asume una relación 2D.
-                    - Si son 2, se asume una relación 3D.
+                    - Si es 1, se asume una relacion 2D.
+                    - Si son 2, se asume una relacion 3D.
         target_col: Nombre de la columna objetivo (variable dependiente).
         threshold: Umbral para la varianza explicada por la tercera componente (en caso 3D).
                    Por defecto es 0.2, es decir, el modelo es aceptable si el 80% de los datos
-                   están contenidos en el plano de entrada.
+                   estan contenidos en el plano de entrada.
     
         _________________________________SALIDAS________________________________
-        - best_expr: Mejor expresión simbólica encontrada (en formato SymPy) si cumple el umbral.
-        - métrica: Varianza explicada o RMSE según el caso.
-        - datos: Datos combinados usados para visualización o evaluación.
+        - best_expr: Mejor expresion simbolica encontrada (en formato SymPy) si cumple el umbral.
+        - metrica: Varianza explicada o RMSE segun el caso.
+        - datos: Datos combinados usados para visualizacion o evaluacion.
         """
     
         # Extraer variables independientes y dependientes
@@ -288,7 +289,7 @@ A continuación vamos a ver como se ha implementado el modelo de SR para obtener
             X, y, test_size=0.3, random_state=12
         )
     
-        # Ajustar el modelo de regresión simbólica con los datos de entrenamiento
+        # Ajustar el modelo de regresion simbolica con los datos de entrenamiento
         model = PySRRegressor(
             binary_operators=["+", "-", "*", "/", "^"],
             unary_operators=["exp", "log", "sqrt"],
@@ -301,7 +302,7 @@ A continuación vamos a ver como se ha implementado el modelo de SR para obtener
         # Predecir con el modelo ajustado
         y_pred = model.predict(X_test)
     
-        # Normalizar los datos para evaluación (evita sesgos por escalas)
+        # Normalizar los datos para evaluacion (evita sesgos por escalas)
         scaler_X = StandardScaler()
         X_test_scaled = scaler_X.fit_transform(X_test)
     
@@ -315,7 +316,7 @@ A continuación vamos a ver como se ha implementado el modelo de SR para obtener
         if len(input_cols) == 2:
             # Caso tridimensional: evaluar el plano de entrada y su capacidad explicativa
     
-            # Combinar entradas normalizadas y predicción para PCA
+            # Combinar entradas normalizadas y prediccion para PCA
             data_combined = np.hstack((X_test_scaled, y_pred_scaled.reshape(-1, 1)))
     
             # Aplicar PCA a 3 componentes
@@ -336,11 +337,11 @@ A continuación vamos a ver como se ha implementado el modelo de SR para obtener
                 return None, third_component_variance, PCA_data
     
         else:
-            # Caso bidimensional: usar error cuadrático medio como métrica
+            # Caso bidimensional: usar error cuadratico medio como metrica
             rmse = root_mean_squared_error(y_test_scaled, y_pred_scaled)
             print(f"RMSE: {rmse:.4f}")
     
-            # Retornar la mejor expresión encontrada junto con la métrica
+            # Retornar la mejor expresion encontrada junto con la metrica
             best_expr = model.sympy()
             return best_expr, rmse, y_pred, y_test
     \end{lstlisting}
@@ -385,10 +386,7 @@ Dadas las dimensiones de estos gráficos y el número límitado de páginas de e
     \item En el caso de las tasas de formación estelar, esto no se cumple, y son más dependientes del modelo.
     \item El primer punto solo es aplicable cuando nos comparamos modelos de un mismo autor, ya que aunque siguen formando una recta la dispersión es mucho mayor y no es un procedimiento preciso en este caso.
     \item Al igual ocurre si la medida tiene en cuenta la emisión nebular o no, en este caso la dispersión es mucho mayor y no se puede comparar entre si.
-    \item A continuación una lista de posibles relaciones que quedan excluidas una vez analizados los gráficos:
-    \begin{enumerate}
-        \item 
-    \end{enumerate}
+    
 \end{itemize}
 
 
@@ -417,12 +415,12 @@ pero la relación sigue estando ahí, es por eso que para estudiar estas relacio
 La distancia por correlación es una medida de la dependencia entre dos variables aleatorias, en la que se mide la distancia entre los valores de las variables (distancia entre puntos en un diagrama de dsipersión), por lo que no se ve tan afectado pot la 
 linealidad de los datos, es decir, captura la dependencia entre las variables sin importar si esta es lineal o no.
 
-Para estudiar esta relación se han usado los gráficos de dispersión de la figura \ref{fig:MSFR} en donde se han representado los datos en diferentes formas funcionales típicas en astrofísica.
+Para estudiar esta relación se han usado los gráficos de dispersión de la figura \ref{fig:MSFR} en donde se han representado los datos en diferentes formas funcionales típicos en astrofísica.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
-    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
+    \caption{Ejemplo de gráfico para explorar dependencias entre variables. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
     \label{fig:MSFR}
 \end{figure}
 
@@ -446,7 +444,7 @@ En este caso, el EVR se utiliza para evaluar la cantidad de varianza que se expl
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.35\textwidth]{3d_BooMeLee_SFR_14a_deltau_solMass_yr_z_best.png}
-    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
+    \caption{Ejemplo de gráfico para explorar planos en el espacio de parámetros. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
     \label{fig:3dexample}
 \end{figure}
 
@@ -455,13 +453,16 @@ Para obtener la expresión final se filtrado por el EVR de cada una de las gráf
 
 
 \section{Resultados}
-
+A continuación se presenta los resultados obtenidos durante la elavoración de este trabajo. Cabe destacar que los gráficos que 
+se presentan son solo una pequeña parte de los resultados obtenidos, ya que el número de gráficos es muy elevado y no todos 
+ellos tienen la misma calidad o son variaciones mínimas (por ejemplo, relaciones en diferentes bandas fotométricas), aunque pueden ser útiles para diferentes estudios.
 \subsection{Relaciones estructurales en 2D}
+
 \subsubsection{Relación Masa-Tasa de formación estelar}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
-    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main/MSFR}{aquí}}
+    \includegraphics[width=\textwidth]{MSFR1.png}
+    \caption{Relación entre la masa y la tasa de formación estelar. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main}{aquí}}
     \label{fig:MSFR}
 \end{figure}
 \subsubsection{Relación Masa-Luminosidad}
@@ -469,19 +470,64 @@ Para obtener la expresión final se filtrado por el EVR de cada una de las gráf
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.35\textwidth]{MSFR/2d_68e6e2.png}
-    \caption{Relación entre la masa y la luminosidad. Pueden verse más gráficos \href{URL}{aquí}}
+    \caption{Relación entre la masa y la luminosidad. Pueden verse más gráficos \href{https://github.com/PhyAMR/TFG/tree/main}{aquí}}
     \label{fig:LM}
 \end{figure}
 \subsubsection{Relación Masa-Magnitud}
 \subsubsection{Relación Tasa de formación estelar-Magnitud}
-\subsubsection{Relación }
+\subsubsection{Relación Tasa de formación estelar-Extinción}
+
 \subsection{Análisis de relaciones estructurales 3D}
-\subsubsection{Relación Masa-Redshift-Tasa de formación estelar}
+\subsubsection{Relación Masa-Redshift-Metalicidad}
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{MMETZ.png}
+        \caption{Relación sin tener en cuenta el efecto del polvo}
+        \label{fig:met11}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.45\textwidth}
+        \includegraphics[width=\textwidth]{MMETDUSTZ.png}
+        \caption{Relación teniendo en cuenta el efecto del polvo}
+        \label{fig:met22}
+    \end{subfigure}
+    \caption{Plano Masa-Redshift-Metalicidad}
+    \label{fig:imagenes_MMETZ}
+\end{figure}
+\begin{DispWithArrows}[format=c, displaystyle, subequations]
+ M_{G}=e^{\mathrm{Z_{G}}+2.1398616} +\log_{10}(z) \\
+ \log_{10}(M_G)=\sqrt{\mathrm{Z_{G}^{dust}+0.82549924}}+ 0.11256291\log_{10}(z)
+\end{DispWithArrows}
+\subsubsection{Relación Magnitud-Redshift-Tasa de formación estelar }
+\subsubsection{Relación Tasa de formación estelar-Extinción-Masa}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{SFRAVM.png}
+    \caption{Plano Masa-Redshift-Tasa de formación estelar}
+\end{figure}
+\begin{equation}
+    \log_{10}(SFR)=\sqrt{A_{v}}+12.787003\log_{10}(\log_{10}(M_{G}))
+\end{equation}
+
 \section{Conclusiones}
 
-Como se puede observar en los pairplots, la variables de metalicidad (met), extinción ($A_{v}$) y exceso de color ($E(B-V)$) 
-formán agrupaciones, por lo que lo mejor sería determinar los grupos de galaxias que se definen con estas variables y estudiar cada grupo por separado.
+A lo largo de este trabajo se ha mostrado la necesidad de encontrar estas relaciones, al igual que le mecanismo que se ha 
+empleado para detectarlas. Queda claro que estas relaciones existen y que son necesarias para poder entender el funcionamiento de las galaxias.
 
+
+Se han observado numerosas relaciones que conforman un \textit{plano fundamental} degenerado, es decir, los datos forman un plano, pero no depende 
+de una de las variables. Este tipo de relaciones no son más útiles que una relación bidimensional, aunque si que pueden tener influencia en las constantes que definen el modelo. 
+
+Aunque esta metodología es consistente con relaciones ya conocidas, este trabajo puede implementar futuras mejoras, como  una
+limpieza de datos más exhaustiva, no solo eliminando los valores mal medidos, si no eliminando tambien los valores atípicos que pueden llegar a afectar al rendimiento del modelo. 
+
+Otra de las mejoras que puede tener un efecto importante en el rendimiento del modelo es la de definir grupos más pequeños, 
+es decir, en este trabajo solo se ha filtrado por el redshift para centrarnos en una época concreta del universo, pero como 
+el comportamiento de las galaxias es muy complejo es posible que el comportamiento de galaxias con diferentes parámetros 
+(por ejemplo metalicidad o extinción en la banda $V$) pueda ser mu diferente. Esto puede verse en las diagonales inferiores 
+de los \textit{pairplots}, haciendo que un análisis de los diferentes \textit{''Clusters''} en diferentes espacios de 
+parámetros sea muy beneficioso.
 %\bibliographystyle{plainnat} % We choose the "plain" reference style
 %\bibliography{refs} % Entries are in the refs.bib file
 

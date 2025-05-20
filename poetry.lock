@@ -1972,13 +1972,13 @@ diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pysr"
-version = "1.5.5"
+version = "1.5.6"
 description = "Simple and efficient symbolic regression"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "pysr-1.5.5-py3-none-any.whl", hash = "sha256:1a7e633ed3c86fbb4810e199f23e5248b1066d6c741f92757182ed1ae40ff744"},
-    {file = "pysr-1.5.5.tar.gz", hash = "sha256:6d8373351c620333406d27dd4c62953a707062a100c8a47122b05d9f7053b5cf"},
+    {file = "pysr-1.5.6-py3-none-any.whl", hash = "sha256:c10f65e0c63c5a59786f1f6c27f6e7604268336a183dbfc621e5ac3ca6cbca41"},
+    {file = "pysr-1.5.6.tar.gz", hash = "sha256:ca806679050b0170c87766b5e0b613278de91117542cd0c804b8af428af728c5"},
 ]
 
 [package.dependencies]
