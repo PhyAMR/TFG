@@ -13,6 +13,10 @@
 *.fls
 *.xml
 *.txt
+!Data/raw/hlsp_candels_hst_wfc3_egs_multi_v1_mass-cat.txt
+!Data/raw/hlsp_candels_hst_wfc3_egs_multi_v1_photoz-cat.txt
+!Data/raw/hlsp_candels_hst_wfc3_egs_multi_v1_physpar-cat.txt
+!Data/raw/hlsp_candels_hst_wfc3_egs_multi_v2_redshift-cat.txt
 outputs/
 reports/
 .venv/
