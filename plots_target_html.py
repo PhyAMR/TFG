@@ -1192,7 +1192,7 @@ if __name__ == "__main__":
     
 
     targets = df_numeric.filter(regex=r'^SFR').columns.tolist()
-    targetsb = df_numeric.filter(regex=r'^M_\d+|^SFR|').columns.tolist()
+    targetsb = df_numeric.filter(regex=r'^M_\d+').columns.tolist()
         
     targets_df = df_numeric.filter(regex=r'^M_\d+|^SFR|^L|(mag)|met|z_best')
     print(targets)
@@ -1223,7 +1223,7 @@ if __name__ == "__main__":
     group_tau      = targets_df.filter(regex=r'^z_best|_6a_tau(?: \^NEB)?')
     group_deltau   = targets_df.filter(regex=r'^z_best|_6a_deltau')
     group_invtau   = targets_df.filter(regex=r'^z_best|_6a_invtau')
-    groups = [group_tau,group_invtau,group_deltau]
+    groups = [group_tau]#,group_invtau,group_deltau]
     for g in groups:
         for t in targetsb:
             
